@@ -2,13 +2,12 @@ name: Update Eredivisie Stand
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # Elke dag om 07:00 UTC (09:00 NL-tijd)
-  workflow_dispatch:        # Ook handmatig te starten via GitHub
+    - cron: '0 7 * * *'
+  workflow_dispatch:
 
 jobs:
   update-standings:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,9 +21,8 @@ jobs:
 
       - name: Commit en push standings.json
         run: |
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add standings.json
-          git diff --cached --quiet || git commit -m "🤖 Automatische update Eredivisie stand $(date +'%Y-%m-%d')"
+          git diff --cached --quiet || git commit -m "🤖 Update Eredivisie stand $(date +'%Y-%m-%d')"
           git push
-
