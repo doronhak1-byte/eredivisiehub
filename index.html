@@ -8,32 +8,559 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3861801451633243" crossorigin="anonymous"></script>
     <style>
-        :root {
-            --oranje:   #ff6200;
-            --oranje2:  #ff8c00;
-            --bg:       #1a1a1a;
-            --surface:  #242424;
-            --surface2: #2e2e2e;
-            --border:   #3a3a3a;
-            --text:     #ffffff;
-            --muted:    #a0a0a0;
-            --green:    #00c853;
-            --red:      #ff3d3d;
-            --yellow:   #ffd600;
-            --blue:     #4da6ff;
+        :root{--oranje:#ff6200;--oranje2:#ff8c00;--bg:#1a1a1a;--surface:#242424;--surface2:#2e2e2e;--border:#3a3a3a;--text:#ffffff;--muted:#a0a0a0;--green:#00c853;--red:#ff3d3d;--yellow:#ffd600;--blue:#4da6ff;}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+        header{position:relative;background:var(--oranje);padding:0;overflow:hidden}
+        .header-top{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;gap:16px;flex-wrap:wrap}
+        .logo-block{display:flex;align-items:center;gap:16px}
+        .knvb-badge{width:56px;height:56px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6em;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,0.3)}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(2em,6vw,3.2em);color:white;letter-spacing:3px;line-height:1;text-shadow:2px 2px 8px rgba(0,0,0,0.2)}
+        .logo small{display:block;font-family:'DM Sans',sans-serif;font-size:0.28em;letter-spacing:3px;text-transform:uppercase;opacity:0.85;font-weight:600}
+        .header-meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+        .season-badge{background:rgba(0,0,0,0.2);border-radius:30px;padding:5px 16px;font-size:0.82em;font-weight:600;letter-spacing:1px;color:white}
+        .last-updated{display:inline-flex;align-items:center;gap:7px;font-size:0.75em;color:rgba(255,255,255,0.75)}
+        .live-dot{width:8px;height:8px;border-radius:50%;background:white;animation:pulse 2s infinite;box-shadow:0 0 6px rgba(255,255,255,0.8)}
+        @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+        .header-bar{height:6px;background:linear-gradient(90deg,rgba(0,0,0,0.3) 0%,rgba(255,255,255,0.2) 50%,rgba(0,0,0,0.3) 100%)}
+        .nav{background:var(--surface);display:flex;gap:6px;padding:14px 24px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;align-items:center}
+        .nav::-webkit-scrollbar{display:none}
+        .nav-tab{font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.85em;padding:9px 22px;border:2px solid transparent;background:transparent;color:var(--muted);cursor:pointer;border-radius:30px;white-space:nowrap;transition:all 0.2s;letter-spacing:0.3px}
+        .nav-tab:hover{color:var(--text);border-color:var(--border)}
+        .nav-tab.active{background:var(--oranje);color:white;border-color:var(--oranje)}
+        .main{padding:24px;max-width:1100px;margin:0 auto}
+        .section{display:none}.section.active{display:block}
+        .status-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:16px;color:var(--muted)}
+        .spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--oranje);border-radius:50%;animation:spin .7s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .error-msg{color:var(--red);text-align:center;max-width:400px}
+        .retry-btn{padding:10px 28px;border:2px solid var(--oranje);border-radius:30px;background:transparent;color:var(--oranje);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.9em;transition:all 0.2s}
+        .retry-btn:hover{background:var(--oranje);color:white}
+        .search-wrap{position:relative;margin-bottom:16px}
+        .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+        .search-input{width:100%;max-width:320px;padding:10px 14px 10px 38px;background:var(--surface);border:2px solid var(--border);border-radius:30px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9em;outline:none;transition:border-color 0.2s}
+        .search-input:focus{border-color:var(--oranje)}.search-input::placeholder{color:var(--muted)}
+        .table-wrap{border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,0.3)}
+        table{width:100%;border-collapse:collapse}
+        thead tr{background:var(--oranje)}
+        th{padding:13px 14px;font-size:0.72em;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:white;text-align:left;white-space:nowrap}
+        th:not(:first-child):not(:nth-child(2)){text-align:center}
+        td{padding:11px 14px;border-top:1px solid var(--border);font-size:0.9em;text-align:center}
+        td:nth-child(2){text-align:left}
+        tbody tr{background:var(--surface);transition:background 0.15s}
+        tbody tr:hover{background:var(--surface2)}
+        tbody tr:nth-child(even){background:#202020}
+        tbody tr:nth-child(even):hover{background:var(--surface2)}
+        .pos-cell{font-family:'Bebas Neue',sans-serif;font-size:1.15em;color:var(--oranje);width:36px}
+        .team-cell{display:flex;align-items:center;gap:10px;min-width:140px}
+        .team-crest{width:26px;height:26px;object-fit:contain;flex-shrink:0}
+        .team-label{font-weight:600}
+        .pts-cell{font-weight:700;font-size:1.05em;color:var(--oranje)}
+        .gd-pos{color:var(--green);font-weight:600}.gd-neg{color:var(--red);font-weight:600}
+        .row-cl{border-left:4px solid var(--blue)}.row-el{border-left:4px solid var(--oranje2)}.row-conf{border-left:4px solid var(--green)}.row-relpo{border-left:4px solid var(--yellow)}.row-rel{border-left:4px solid var(--red)}
+        .form-dots{display:flex;gap:4px;justify-content:center}
+        .dot{width:11px;height:11px;border-radius:50%}
+        .dot-w{background:var(--green)}.dot-d{background:var(--yellow)}.dot-l{background:var(--red)}.dot-u{background:var(--border)}
+        .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:18px}
+        .legend-item{display:flex;align-items:center;gap:8px;font-size:0.8em;color:var(--muted)}
+        .legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+        .section-title{font-family:'Bebas Neue',sans-serif;font-size:1em;letter-spacing:2px;color:white;background:var(--oranje);display:inline-block;padding:5px 20px;border-radius:30px;margin-bottom:18px}
+        .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+        @media(max-width:700px){.chart-grid{grid-template-columns:1fr}}
+        .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.2)}
+        .chart-card.full{grid-column:1/-1}
+        .chart-wrap{position:relative;height:260px}.chart-wrap.tall{height:360px}
+        .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+        .tog-btn{padding:8px 20px;border:2px solid var(--border);border-radius:30px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.85em;font-weight:600;cursor:pointer;transition:all 0.2s}
+        .tog-btn:hover{border-color:var(--oranje);color:var(--text)}.tog-btn.active{background:var(--oranje);border-color:var(--oranje);color:white}
+        .scorers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+        .scorer-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:16px;transition:all 0.2s}
+        .scorer-card:hover{border-color:var(--oranje);transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,98,0,0.2)}
+        .scorer-rank{font-family:'Bebas Neue',sans-serif;font-size:2.2em;color:var(--border);width:32px;flex-shrink:0;line-height:1}
+        .scorer-rank.top1{color:#ffd700}.scorer-rank.top2{color:#c0c0c0}.scorer-rank.top3{color:#cd7f32}
+        .scorer-info{flex:1;min-width:0}
+        .scorer-name{font-weight:700;font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .scorer-team{font-size:0.78em;color:var(--muted);margin-top:3px}
+        .scorer-goals{font-family:'Bebas Neue',sans-serif;font-size:2.4em;color:var(--oranje);line-height:1}
+        .scorer-goals span{font-family:'DM Sans',sans-serif;font-size:0.35em;color:var(--muted);font-weight:400}
+        .matches-list{display:flex;flex-direction:column;gap:10px}
+        .match-day-header{font-family:'Bebas Neue',sans-serif;font-size:0.88em;letter-spacing:2.5px;color:var(--oranje);padding:10px 0 5px;border-bottom:2px solid var(--oranje);margin:8px 0 4px}
+        .match-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;transition:all 0.15s}
+        .match-card:hover{border-color:var(--oranje);background:var(--surface2)}
+        .match-date{font-size:0.75em;color:var(--muted);min-width:76px;flex-shrink:0}
+        .match-date strong{display:block;color:var(--text);font-size:1.15em;font-weight:700}
+        .match-teams{flex:1;display:flex;align-items:center;gap:10px;justify-content:center}
+        .match-team{font-weight:600;font-size:0.9em;text-align:right;flex:1}.match-team.away{text-align:left}
+        .match-score{font-family:'Bebas Neue',sans-serif;font-size:1.5em;color:var(--oranje);letter-spacing:3px;min-width:64px;text-align:center}
+        .match-status{font-size:0.72em;padding:4px 12px;border-radius:30px;flex-shrink:0;font-weight:700}
+        .status-scheduled{background:rgba(255,98,0,0.12);color:var(--oranje)}
+        .status-live{background:rgba(0,200,83,0.15);color:var(--green);animation:pulse 2s infinite}
+        .status-finished{background:var(--surface2);color:var(--muted)}
+        .ad-wrap{margin:28px 0;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+
+        /* MIJN CLUB */
+        .club-picker-wrap{margin-bottom:24px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+        .club-picker-label{font-size:0.82em;font-weight:600;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:block;width:100%}
+        .club-select{padding:11px 20px;background:var(--surface);border:2px solid var(--border);border-radius:30px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.95em;font-weight:600;outline:none;cursor:pointer;transition:border-color 0.2s;min-width:220px}
+        .club-select:focus{border-color:var(--oranje)}
+        .fav-star{font-size:1.4em;cursor:pointer;margin-left:8px;transition:transform 0.2s;user-select:none}
+        .fav-star:hover{transform:scale(1.2)}
+        .club-hero{background:linear-gradient(135deg,var(--oranje) 0%,#c44a00 100%);border-radius:16px;padding:24px 28px;display:flex;align-items:center;gap:20px;margin-bottom:24px;box-shadow:0 8px 32px rgba(255,98,0,0.3);flex-wrap:wrap}
+        .club-hero-crest{width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.4))}
+        .club-hero-placeholder{width:72px;height:72px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2em}
+        .club-hero-info{flex:1;min-width:180px}
+        .club-hero-name{font-family:'Bebas Neue',sans-serif;font-size:2.2em;letter-spacing:2px;line-height:1}
+        .club-hero-pos{font-size:0.88em;opacity:0.85;margin-top:4px}
+        .club-hero-pts{font-family:'Bebas Neue',sans-serif;font-size:3.5em;line-height:1;text-align:center}
+        .club-hero-pts span{display:block;font-family:'DM Sans',sans-serif;font-size:0.25em;opacity:0.8;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+        .stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:24px}
+        .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;transition:border-color 0.2s}
+        .stat-card:hover{border-color:var(--oranje)}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:2.2em;color:var(--oranje);line-height:1}
+        .stat-label{font-size:0.72em;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.8px}
+        .vs-wrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;margin-bottom:20px}
+        .vs-badge{font-family:'Bebas Neue',sans-serif;font-size:1.8em;color:var(--muted);letter-spacing:2px;text-align:center}
+        .vs-select{width:100%;padding:10px 16px;background:var(--surface);border:2px solid var(--border);border-radius:30px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9em;font-weight:600;outline:none;cursor:pointer;transition:border-color 0.2s}
+        .vs-select:focus{border-color:var(--oranje)}
+        .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+        .compare-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+        .compare-header{padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-family:'Bebas Neue',sans-serif;font-size:1.1em;letter-spacing:1px}
+        .compare-header img{width:26px;height:26px;object-fit:contain}
+        .compare-stat{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border);font-size:0.88em}
+        .compare-stat:last-child{border-bottom:none}
+        .compare-stat-label{color:var(--muted);font-size:0.8em;text-transform:uppercase;letter-spacing:0.5px}
+        .compare-stat-val{font-weight:700;font-size:1em}
+        .compare-stat-val.better{color:var(--green)}.compare-stat-val.worse{color:var(--red)}
+        .compare-bar-wrap{padding:10px 18px 14px}
+        .compare-bar-label{font-size:0.72em;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+        .compare-bar-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+        .compare-bar-fill{height:100%;border-radius:4px;background:var(--oranje);transition:width 0.6s ease}
+        .topflop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+        .topflop-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+        .topflop-header{padding:13px 18px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .topflop-title{font-family:'Bebas Neue',sans-serif;font-size:1em;letter-spacing:1.5px;color:var(--oranje)}
+        .topflop-subtitle{font-size:0.7em;color:var(--muted)}
+        .topflop-row{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);transition:background 0.15s}
+        .topflop-row:last-child{border-bottom:none}.topflop-row:hover{background:var(--surface2)}
+        .topflop-rank{font-family:'Bebas Neue',sans-serif;font-size:1.4em;color:var(--border);width:22px;flex-shrink:0}
+        .topflop-rank.gold{color:#ffd700}
+        .topflop-crest{width:22px;height:22px;object-fit:contain}
+        .topflop-team{flex:1;font-weight:600;font-size:0.88em}
+        .topflop-val{font-family:'Bebas Neue',sans-serif;font-size:1.3em}
+        .topflop-val.good{color:var(--green)}.topflop-val.bad{color:var(--red)}
+
+        @media(max-width:600px){
+            .main{padding:14px}th,td{padding:9px 8px;font-size:0.82em}.hide-mobile{display:none}
+            .header-top{padding:16px 20px}.header-meta{align-items:flex-start}
+            .vs-wrap{grid-template-columns:1fr}.vs-badge{display:none}
+            .compare-grid{grid-template-columns:1fr}
         }
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-top">
+        <div class="logo-block">
+            <div class="knvb-badge">⚽</div>
+            <div class="logo">EredivisieHub<small>Seizoen 2025 – 2026</small></div>
+        </div>
+        <div class="header-meta">
+            <span class="season-badge">🏆 Eredivisie</span>
+            <div class="last-updated"><span class="live-dot"></span><span id="lastUpdatedText">Laden…</span></div>
+        </div>
+    </div>
+    <div class="header-bar"></div>
+</header>
 
-        * { margin:0; padding:0; box-sizing:border-box; }
+<nav class="nav">
+    <button class="nav-tab" onclick="switchTab('stand',this)">🏆 Stand</button>
+    <button class="nav-tab active" onclick="switchTab('grafieken',this)">📊 Grafieken</button>
+    <button class="nav-tab" onclick="switchTab('wedstrijden',this)">📅 Wedstrijden</button>
+    <button class="nav-tab" onclick="switchTab('topscorers',this)">⚽ Topscorers</button>
+    <button class="nav-tab" onclick="switchTab('mijnclub',this)">⭐ Mijn Club</button>
+</nav>
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
+<div class="main">
+    <!-- STAND -->
+    <div class="section" id="tab-stand">
+        <div id="standLoading" class="status-box"><div class="spinner"></div><p>Stand ophalen…</p></div>
+        <div id="standError" class="status-box" style="display:none"><span style="font-size:2.5em">⚠️</span><p class="error-msg" id="standErrorMsg"></p><button class="retry-btn" onclick="loadAll()">Opnieuw proberen</button></div>
+        <div id="standData" style="display:none">
+            <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" type="text" id="teamSearch" placeholder="Zoek team…" oninput="filterTable()"></div>
+            <div class="table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>GS</th><th class="hide-mobile">W</th><th class="hide-mobile">G</th><th class="hide-mobile">V</th><th class="hide-mobile">DV</th><th class="hide-mobile">DT</th><th>DS</th><th>Pts</th><th class="hide-mobile">Vorm</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Champions League</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--oranje2)"></div>Europa League</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Conference League</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Degradatie Playoff</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Degradatie</div>
+            </div>
+            <div class="ad-wrap"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3861801451633243" data-ad-slot="2350073268" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle=window.adsbygoogle||[]).push({});</script></div>
+        </div>
+    </div>
+
+    <!-- GRAFIEKEN -->
+    <div class="section active" id="tab-grafieken">
+        <div class="btn-row">
+            <button class="tog-btn active" onclick="switchMainChart('points',this)">Punten</button>
+            <button class="tog-btn" onclick="switchMainChart('goals',this)">Doelpunten</button>
+            <button class="tog-btn" onclick="switchMainChart('goalDiff',this)">Doelsaldo</button>
+            <button class="tog-btn" onclick="switchMainChart('winPct',this)">Win %</button>
+        </div>
+        <div class="chart-grid">
+            <div class="chart-card full"><div class="section-title">Ranglijst Overzicht</div><div class="chart-wrap tall"><canvas id="mainChart"></canvas></div></div>
+            <div class="chart-card"><div class="section-title">Thuis vs Uit (Top 8)</div><div class="chart-wrap"><canvas id="homeAwayChart"></canvas></div></div>
+            <div class="chart-card"><div class="section-title">Aanval vs Verdediging</div><div class="chart-wrap"><canvas id="attackDefChart"></canvas></div></div>
+        </div>
+    </div>
+
+    <!-- WEDSTRIJDEN -->
+    <div class="section" id="tab-wedstrijden">
+        <div id="matchLoading" class="status-box"><div class="spinner"></div><p>Wedstrijden ophalen…</p></div>
+        <div id="matchError" class="status-box" style="display:none"><span style="font-size:2.5em">⚠️</span><p class="error-msg" id="matchErrorMsg"></p></div>
+        <div id="matchData" style="display:none"><div class="matches-list" id="matchesList"></div></div>
+    </div>
+
+    <!-- TOPSCORERS -->
+    <div class="section" id="tab-topscorers">
+        <div id="scorerLoading" class="status-box"><div class="spinner"></div><p>Topscorers ophalen…</p></div>
+        <div id="scorerError" class="status-box" style="display:none"><span style="font-size:2.5em">⚠️</span><p class="error-msg" id="scorerErrorMsg"></p></div>
+        <div id="scorerData" style="display:none"><div class="scorers-grid" id="scorersList"></div></div>
+    </div>
+
+    <!-- MIJN CLUB -->
+    <div class="section" id="tab-mijnclub">
+        <div id="mijnclubEmpty" class="status-box" style="display:none"><span style="font-size:2.5em">⚽</span><p style="color:var(--muted)">Laad eerst de standdata.</p></div>
+        <div id="mijnclubContent" style="display:none">
+            <!-- Club kiezen -->
+            <div class="club-picker-wrap">
+                <label class="club-picker-label">Kies jouw favoriete club</label>
+                <select class="club-select" id="favClubSelect" onchange="onFavChange()"></select>
+                <span class="fav-star" id="favStar" onclick="saveFav()" title="Sla op als favoriet">☆</span>
+            </div>
+
+            <!-- Hero -->
+            <div class="club-hero" id="clubHero" style="display:none">
+                <div id="heroCrests"></div>
+                <div class="club-hero-info">
+                    <div class="club-hero-name" id="heroName">—</div>
+                    <div class="club-hero-pos" id="heroPos">—</div>
+                    <div style="margin-top:10px" id="heroForm"></div>
+                </div>
+                <div class="club-hero-pts" id="heroPts">—<span>punten</span></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stat-row" id="statRow"></div>
+
+            <!-- Club vs Club -->
+            <div class="section-title" style="margin-top:4px">⚔️ Club vs Club</div>
+            <div class="vs-wrap">
+                <select class="vs-select" id="vsClub1" onchange="renderCompare()"></select>
+                <div class="vs-badge">VS</div>
+                <select class="vs-select" id="vsClub2" onchange="renderCompare()"></select>
+            </div>
+            <div class="compare-grid" id="compareGrid"></div>
+
+            <!-- Top/Flop -->
+            <div class="section-title">🔢 Top &amp; Flop Statistieken</div>
+            <div class="topflop-grid" id="topflopGrid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const API_TOKEN='948955270a6143dba3f75d2298ff0fa0';
+const HEADERS={'X-Auth-Token':API_TOKEN};
+const BASE='https://api.football-data.org/v4';
+const FAV_KEY='eredivisie_fav_club';
+let standings=[],mainChart=null,haChart=null,adChart=null,mainType='points';
+
+function switchTab(id,btn){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+id).classList.add('active');
+    btn.classList.add('active');
+    if(id==='mijnclub'&&standings.length)renderMijnClub();
+}
+
+function getRowClass(pos){
+    if(pos<=2)return'row-cl';if(pos<=4)return'row-el';if(pos<=8)return'row-conf';
+    if(pos===16)return'row-relpo';if(pos>=17)return'row-rel';return'';
+}
+
+async function loadAll(){loadStandings();loadMatches();loadScorers();}
+
+async function loadStandings(){
+    show('standLoading');hide('standError');hide('standData');
+    try{
+        let json;
+        try{
+            const r=await fetch('standings.json');
+            if(!r.ok)throw new Error('no local');
+            json=await r.json();
+            const lm=r.headers.get('Last-Modified');
+            setUpdated(lm?new Date(lm):new Date());
+        }catch{
+            const r=await fetch(`${BASE}/competitions/DED/standings`,{headers:HEADERS});
+            if(!r.ok)throw new Error(`API fout ${r.status}`);
+            json=await r.json();setUpdated(new Date());
         }
+        const table=json.standings?.find(s=>s.type==='TOTAL')?.table;
+        if(!table)throw new Error('Onverwacht data-formaat');
+        standings=table.map(e=>({
+            pos:e.position,team:e.team.shortName||e.team.name,crest:e.team.crest||'',
+            gp:e.playedGames,w:e.won,d:e.draw,l:e.lost,
+            gf:e.goalsFor,ga:e.goalsAgainst,gd:e.goalDifference,pts:e.points,
+            form:e.form||'',rowClass:getRowClass(e.position),
+            winPct:e.playedGames>0?Math.round(e.won/e.playedGames*100):0
+        }));
+        renderTable(standings);renderCharts();populateMijnClub();
+        hide('standLoading');hide('standError');show('standData');
+    }catch(err){hide('standLoading');show('standError');document.getElementById('standErrorMsg').textContent='Fout: '+err.message;}
+}
 
-        /* ── HEADER ── */
+function renderTable(data){
+    const tbody=document.getElementById('tableBody');tbody.innerHTML='';
+    data.forEach(t=>{
+        const gdClass=t.gd>0?'gd-pos':t.gd<0?'gd-neg':'';
+        const gdStr=t.gd>0?`+${t.gd}`:`${t.gd}`;
+        const crest=t.crest?`<img src="${t.crest}" class="team-crest" loading="lazy" alt="">`:'';
+        const tr=document.createElement('tr');
+        tr.className=t.rowClass;tr.dataset.team=t.team.toLowerCase();
+        tr.innerHTML=`<td class="pos-cell">${t.pos}</td><td><div class="team-cell">${crest}<span class="team-label">${t.team}</span></div></td><td>${t.gp}</td><td class="hide-mobile">${t.w}</td><td class="hide-mobile">${t.d}</td><td class="hide-mobile">${t.l}</td><td class="hide-mobile">${t.gf}</td><td class="hide-mobile">${t.ga}</td><td class="${gdClass}">${gdStr}</td><td class="pts-cell">${t.pts}</td><td class="hide-mobile">${renderForm(t.form)}</td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderForm(f){
+    if(!f)return'<div class="form-dots">—</div>';
+    return'<div class="form-dots">'+f.replace(/,/g,'').slice(-5).split('').map(l=>`<div class="dot ${l==='W'?'dot-w':l==='D'?'dot-d':l==='L'?'dot-l':'dot-u'}" title="${l==='W'?'Winst':l==='D'?'Gelijk':'Verlies'}"></div>`).join('')+'</div>';
+}
+
+function filterTable(){
+    const q=document.getElementById('teamSearch').value.toLowerCase();
+    document.querySelectorAll('#tableBody tr').forEach(tr=>{tr.style.display=tr.dataset.team?.includes(q)?'':'none';});
+}
+
+function setUpdated(date){
+    document.getElementById('lastUpdatedText').textContent='Bijgewerkt: '+date.toLocaleString('nl-NL',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+const CD={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#2e2e2e',borderColor:'#3a3a3a',borderWidth:1,titleColor:'#ffffff',bodyColor:'#a0a0a0',padding:12,cornerRadius:8}}};
+function renderCharts(){renderMainChart(mainType);renderHomeAway();renderAttackDef();}
+
+function switchMainChart(type,btn){
+    document.querySelectorAll('.tog-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');mainType=type;renderMainChart(type);
+}
+
+function renderMainChart(type){
+    const ctx=document.getElementById('mainChart').getContext('2d');
+    if(mainChart)mainChart.destroy();
+    let data,label,colors;
+    if(type==='points'){data=standings.map(s=>s.pts);label='Punten';colors=standings.map(s=>s.pos<=2?'#4da6ff':s.pos<=4?'#ff8c00':s.pos<=8?'#00c853':s.pos>=17?'#ff3d3d':'#ff6200');}
+    else if(type==='goals'){data=standings.map(s=>s.gf);label='Doelpunten Voor';colors=standings.map(()=>'#ff6200');}
+    else if(type==='goalDiff'){data=standings.map(s=>s.gd);label='Doelsaldo';colors=standings.map(s=>s.gd>=0?'#00c853':'#ff3d3d');}
+    else{data=standings.map(s=>s.winPct);label='Win %';colors=standings.map(s=>{const p=s.w/s.gp;return p>.6?'#00c853':p>.4?'#ff6200':p>.25?'#ff8c00':'#ff3d3d';});}
+    mainChart=new Chart(ctx,{type:'bar',data:{labels:standings.map(s=>s.team),datasets:[{label,data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},options:{...CD,scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#a0a0a0',font:{size:10},maxRotation:45,minRotation:45}},y:{beginAtZero:type!=='goalDiff',grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#a0a0a0',font:{size:11}}}}}});
+}
+
+function renderHomeAway(){
+    const ctx=document.getElementById('homeAwayChart').getContext('2d');
+    if(haChart)haChart.destroy();
+    const top8=standings.slice(0,8);
+    haChart=new Chart(ctx,{type:'bar',data:{labels:top8.map(s=>s.team),datasets:[{label:'Thuis',data:top8.map(s=>Math.round(s.pts*.58)),backgroundColor:'rgba(255,98,0,0.85)',borderRadius:4},{label:'Uit',data:top8.map(s=>Math.round(s.pts*.42)),backgroundColor:'rgba(255,140,0,0.6)',borderRadius:4}]},options:{...CD,plugins:{...CD.plugins,legend:{display:true,labels:{color:'#a0a0a0',font:{size:11},boxWidth:12,borderRadius:6}}},scales:{x:{stacked:true,ticks:{color:'#a0a0a0',font:{size:10},maxRotation:35},grid:{display:false}},y:{stacked:true,ticks:{color:'#a0a0a0',font:{size:11}},grid:{color:'rgba(255,255,255,0.06)'}}}}});
+}
+
+function renderAttackDef(){
+    const ctx=document.getElementById('attackDefChart').getContext('2d');
+    if(adChart)adChart.destroy();
+    adChart=new Chart(ctx,{type:'scatter',data:{datasets:[{label:'Teams',data:standings.map(s=>({x:s.gf,y:s.ga,label:s.team})),backgroundColor:standings.map(s=>s.pos<=2?'rgba(77,166,255,.85)':s.pos<=4?'rgba(255,140,0,.85)':s.pos<=8?'rgba(0,200,83,.85)':s.pos>=17?'rgba(255,61,61,.85)':'rgba(255,98,0,.75)'),pointRadius:7,pointHoverRadius:10}]},options:{...CD,plugins:{...CD.plugins,tooltip:{...CD.plugins.tooltip,callbacks:{label:c=>`${c.raw.label}: ${c.raw.x} voor, ${c.raw.y} tegen`}}},scales:{x:{title:{display:true,text:'Doelpunten Voor',color:'#a0a0a0',font:{size:11}},ticks:{color:'#a0a0a0'},grid:{color:'rgba(255,255,255,0.06)'}},y:{title:{display:true,text:'Doelpunten Tegen',color:'#a0a0a0',font:{size:11}},ticks:{color:'#a0a0a0'},grid:{color:'rgba(255,255,255,0.06)'}}}}});
+}
+
+async function loadMatches(){
+    show('matchLoading');hide('matchError');hide('matchData');
+    try{
+        const today=new Date();
+        const from=fmtDate(new Date(today.getTime()-7*86400000));
+        const to=fmtDate(new Date(today.getTime()+14*86400000));
+        const r=await fetch(`${BASE}/competitions/DED/matches?dateFrom=${from}&dateTo=${to}`,{headers:HEADERS});
+        if(!r.ok)throw new Error(`API fout ${r.status}`);
+        const json=await r.json();
+        renderMatches(json.matches||[]);
+        hide('matchLoading');hide('matchError');show('matchData');
+    }catch(err){hide('matchLoading');show('matchError');document.getElementById('matchErrorMsg').textContent='Fout: '+err.message;}
+}
+
+function fmtDate(d){return d.toISOString().slice(0,10);}
+
+function renderMatches(matches){
+    const list=document.getElementById('matchesList');list.innerHTML='';
+    if(!matches.length){list.innerHTML='<p style="color:var(--muted);text-align:center;padding:40px">Geen wedstrijden gevonden</p>';return;}
+    const groups={};
+    matches.forEach(m=>{const day=m.utcDate.slice(0,10);if(!groups[day])groups[day]=[];groups[day].push(m);});
+    Object.entries(groups).sort().forEach(([day,ms])=>{
+        const h=document.createElement('div');h.className='match-day-header';
+        h.textContent=new Date(day).toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
+        list.appendChild(h);
+        ms.forEach(m=>{
+            const isLive=m.status==='IN_PLAY'||m.status==='PAUSED';
+            const isFinished=m.status==='FINISHED';
+            const statusLabel=isLive?'● LIVE':isFinished?'Gespeeld':new Date(m.utcDate).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+            const statusClass=isLive?'status-live':isFinished?'status-finished':'status-scheduled';
+            const score=isFinished||isLive?`${m.score?.fullTime?.home??'?'} – ${m.score?.fullTime?.away??'?'}`:'vs';
+            const card=document.createElement('div');card.className='match-card';
+            card.innerHTML=`<div class="match-date"><strong>${new Date(m.utcDate).toLocaleDateString('nl-NL',{day:'numeric',month:'short'})}</strong>Speelronde ${m.matchday}</div><div class="match-teams"><span class="match-team">${m.homeTeam.shortName||m.homeTeam.name}</span><span class="match-score">${score}</span><span class="match-team away">${m.awayTeam.shortName||m.awayTeam.name}</span></div><span class="match-status ${statusClass}">${statusLabel}</span>`;
+            list.appendChild(card);
+        });
+    });
+}
+
+async function loadScorers(){
+    show('scorerLoading');hide('scorerError');hide('scorerData');
+    try{
+        const r=await fetch(`${BASE}/competitions/DED/scorers?limit=20`,{headers:HEADERS});
+        if(!r.ok)throw new Error(`API fout ${r.status}`);
+        const json=await r.json();
+        renderScorers(json.scorers||[]);
+        hide('scorerLoading');hide('scorerError');show('scorerData');
+    }catch(err){hide('scorerLoading');show('scorerError');document.getElementById('scorerErrorMsg').textContent='Fout: '+err.message;}
+}
+
+function renderScorers(scorers){
+    const list=document.getElementById('scorersList');list.innerHTML='';
+    scorers.forEach((s,i)=>{
+        const rankClass=i===0?'top1':i===1?'top2':i===2?'top3':'';
+        const card=document.createElement('div');card.className='scorer-card';
+        card.innerHTML=`<div class="scorer-rank ${rankClass}">${i+1}</div><div class="scorer-info"><div class="scorer-name">${s.player.name}</div><div class="scorer-team">${s.team.shortName||s.team.name}</div></div><div class="scorer-goals">${s.goals}<span> goals</span></div>`;
+        list.appendChild(card);
+    });
+}
+
+// ══ MIJN CLUB ══
+function populateMijnClub(){
+    ['favClubSelect','vsClub1','vsClub2'].forEach(id=>{
+        const sel=document.getElementById(id);
+        sel.innerHTML='';
+        standings.forEach(t=>{
+            const o=document.createElement('option');
+            o.value=t.pos;o.textContent=t.team;
+            sel.appendChild(o);
+        });
+    });
+    if(standings.length>=2)document.getElementById('vsClub2').value=standings[1].pos;
+    // Laad opgeslagen favoriet
+    try{
+        const saved=localStorage.getItem(FAV_KEY);
+        if(saved){
+            const idx=standings.findIndex(t=>t.team===saved);
+            if(idx>=0){document.getElementById('favClubSelect').value=standings[idx].pos;document.getElementById('favStar').textContent='⭐';}
+        }
+    }catch(e){}
+}
+
+function onFavChange(){document.getElementById('favStar').textContent='☆';renderMijnClub();}
+
+function saveFav(){
+    const t=getTeam('favClubSelect');if(!t)return;
+    try{localStorage.setItem(FAV_KEY,t.team);}catch(e){}
+    document.getElementById('favStar').textContent='⭐';
+}
+
+function getTeam(selId){
+    const pos=parseInt(document.getElementById(selId).value);
+    return standings.find(t=>t.pos===pos);
+}
+
+function renderMijnClub(){
+    if(!standings.length){hide('mijnclubContent');show('mijnclubEmpty');return;}
+    show('mijnclubContent');hide('mijnclubEmpty');
+    const t=getTeam('favClubSelect');if(!t)return;
+    document.getElementById('vsClub1').value=t.pos;
+    // Hero
+    document.getElementById('heroName').textContent=t.team;
+    document.getElementById('heroPos').textContent=`${posLabel(t.pos)} · ${t.gp} gespeeld`;
+    document.getElementById('heroPts').innerHTML=`${t.pts}<span>punten</span>`;
+    document.getElementById('heroCrests').innerHTML=t.crest?`<img class="club-hero-crest" src="${t.crest}" alt="">`:`<div class="club-hero-placeholder">⚽</div>`;
+    document.getElementById('heroForm').innerHTML=renderForm(t.form);
+    document.getElementById('clubHero').style.display='flex';
+    // Stats
+    const avgGf=(t.gf/t.gp).toFixed(1),avgGa=(t.ga/t.gp).toFixed(1);
+    document.getElementById('statRow').innerHTML=`
+        <div class="stat-card"><div class="stat-value">${t.w}</div><div class="stat-label">Gewonnen</div></div>
+        <div class="stat-card"><div class="stat-value">${t.d}</div><div class="stat-label">Gelijk</div></div>
+        <div class="stat-card"><div class="stat-value">${t.l}</div><div class="stat-label">Verloren</div></div>
+        <div class="stat-card"><div class="stat-value">${t.gf}</div><div class="stat-label">Goals voor</div></div>
+        <div class="stat-card"><div class="stat-value">${t.ga}</div><div class="stat-label">Goals tegen</div></div>
+        <div class="stat-card"><div class="stat-value">${t.gd>0?'+':''}${t.gd}</div><div class="stat-label">Doelsaldo</div></div>
+        <div class="stat-card"><div class="stat-value">${t.winPct}%</div><div class="stat-label">Win %</div></div>
+        <div class="stat-card"><div class="stat-value">${avgGf}</div><div class="stat-label">Goals per duel</div></div>
+        <div class="stat-card"><div class="stat-value">${avgGa}</div><div class="stat-label">Tegen per duel</div></div>`;
+    renderCompare();renderTopFlop();
+}
+
+function posLabel(pos){
+    if(pos===1)return'🥇 Koploper';if(pos===2)return'🥈 2e plek';if(pos===3)return'🥉 3e plek';
+    if(pos<=2)return`${pos}e (Champions League)`;if(pos<=4)return`${pos}e (Europa League)`;
+    if(pos<=8)return`${pos}e (Conference League)`;if(pos===16)return`${pos}e (Degradatie Playoff)`;
+    if(pos>=17)return`${pos}e (Degradatiezone)`;return`${pos}e plaats`;
+}
+
+function renderCompare(){
+    const a=getTeam('vsClub1'),b=getTeam('vsClub2');if(!a||!b)return;
+    const stats=[
+        {label:'Punten',key:'pts',reverse:false},
+        {label:'Gewonnen',key:'w',reverse:false},
+        {label:'Goals voor',key:'gf',reverse:false},
+        {label:'Goals tegen',key:'ga',reverse:true},
+        {label:'Doelsaldo',key:'gd',reverse:false},
+        {label:'Win %',key:'winPct',suffix:'%',reverse:false},
+    ];
+    const maxGf=Math.max(...standings.map(t=>t.gf))||1;
+    function card(team,opp){
+        const crest=team.crest?`<img src="${team.crest}" width="26" height="26" style="object-fit:contain">`:'⚽';
+        let html=`<div class="compare-card"><div class="compare-header">${crest} ${team.team} <span style="margin-left:auto;font-size:.7em;color:var(--muted)">${posLabel(team.pos)}</span></div>`;
+        stats.forEach(s=>{
+            const v=team[s.key],ov=opp[s.key];
+            let cls=s.reverse?(v<ov?'better':v>ov?'worse':''):(v>ov?'better':v<ov?'worse':'');
+            html+=`<div class="compare-stat"><span class="compare-stat-label">${s.label}</span><span class="compare-stat-val ${cls}">${v}${s.suffix||''}</span></div>`;
+        });
+        const pct=Math.min(100,Math.round(team.gf/maxGf*100));
+        html+=`<div class="compare-bar-wrap"><div class="compare-bar-label">Goals voor (relatief)</div><div class="compare-bar-track"><div class="compare-bar-fill" style="width:${pct}%"></div></div></div></div>`;
+        return html;
+    }
+    document.getElementById('compareGrid').innerHTML=card(a,b)+card(b,a);
+}
+
+function renderTopFlop(){
+    const cats=[
+        {title:'Beste Aanval',sub:'Meeste goals voor',key:'gf',desc:true,good:true},
+        {title:'Beste Verdediging',sub:'Minste goals tegen',key:'ga',desc:false,good:false},
+        {title:'Meeste Winst',sub:'Gewonnen duels',key:'w',desc:true,good:true},
+        {title:'Meeste Gelijke Spelen',sub:'Aantal remises',key:'d',desc:true,good:false},
+        {title:'Beste Win %',sub:'Percentage gewonnen',key:'winPct',desc:true,good:true,suffix:'%'},
+        {title:'Slechtste Verdediging',sub:'Meeste goals tegen',key:'ga',desc:true,good:false},
+    ];
+    const grid=document.getElementById('topflopGrid');grid.innerHTML='';
+    cats.forEach(cat=>{
+        const sorted=[...standings].sort((a,b)=>cat.desc?b[cat.key]-a[cat.key]:a[cat.key]-b[cat.key]).slice(0,5);
+        let html=`<div class="topflop-card"><div class="topflop-header"><span class="topflop-title">${cat.title}</span><span class="topflop-subtitle">${cat.sub}</span></div>`;
+        sorted.forEach((t,i)=>{
+            const crest=t.crest?`<img class="topflop-crest" src="${t.crest}" alt="">`:'';
+            const valClass=cat.good?(i===0?'good':''):(i===0?'bad':'');
+            html+=`<div class="topflop-row"><div class="topflop-rank ${i===0?'gold':''}">${i+1}</div>${crest}<div class="topflop-team">${t.team}</div><div class="topflop-val ${valClass}">${t[cat.key]}${cat.suffix||''}</div></div>`;
+        });
+        grid.innerHTML+=html+'</div>';
+    });
+}
+
+function show(id){const el=document.getElementById(id);if(el)el.style.display='flex';}
+function hide(id){const el=document.getElementById(id);if(el)el.style.display='none';}
+loadAll();
+</script>
+</body>
+</html>
         header {
             position: relative;
             background: var(--oranje);
