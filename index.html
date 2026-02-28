@@ -118,6 +118,91 @@
         .tog-btn{padding:8px 20px;border:2px solid var(--border);border-radius:30px;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.85em;font-weight:600;cursor:pointer;transition:all 0.2s}
         .tog-btn:hover{border-color:var(--oranje);color:var(--text)}.tog-btn.active{background:var(--oranje);border-color:var(--oranje);color:white}
 
+        /* KAMPIOEN CALCULATOR */
+        .kampioens-box{
+            background:var(--surface);
+            border:2px solid var(--oranje);
+            border-radius:16px;
+            padding:24px;
+            margin-bottom:20px;
+            position:relative;
+            overflow:hidden;
+        }
+        .kampioens-box::before{
+            content:'';
+            position:absolute;top:0;left:0;right:0;height:4px;
+            background:linear-gradient(90deg,var(--oranje),var(--oranje2),var(--yellow));
+        }
+        .kampioens-title{
+            font-family:'Bebas Neue',sans-serif;
+            font-size:1.05em;letter-spacing:2px;
+            color:var(--oranje);margin-bottom:18px;
+            display:flex;align-items:center;gap:8px;
+        }
+        /* Al kampioen banner */
+        .kampioens-al{
+            text-align:center;padding:12px 0 4px;
+        }
+        .kampioens-al .trophy{font-size:3em;margin-bottom:6px;display:block}
+        .kampioens-al .msg{font-family:'Bebas Neue',sans-serif;font-size:1.6em;letter-spacing:2px;color:var(--yellow)}
+        /* Stats rij */
+        .kamp-stats{
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:12px;
+            margin-bottom:18px;
+        }
+        @media(max-width:500px){.kamp-stats{grid-template-columns:1fr 1fr}}
+        .kamp-stat{
+            background:var(--bg);
+            border:1px solid var(--border);
+            border-radius:12px;
+            padding:14px;
+            text-align:center;
+        }
+        .kamp-stat-val{font-family:'Bebas Neue',sans-serif;font-size:2.4em;line-height:1}
+        .kamp-stat-label{font-size:0.7em;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.8px}
+        /* Voortgangsbalk */
+        .kamp-progress-wrap{margin-bottom:6px}
+        .kamp-progress-label{
+            display:flex;justify-content:space-between;
+            font-size:0.78em;color:var(--muted);margin-bottom:6px;
+        }
+        .kamp-progress-track{
+            height:12px;background:var(--border);
+            border-radius:6px;overflow:hidden;
+        }
+        .kamp-progress-fill{
+            height:100%;border-radius:6px;
+            background:linear-gradient(90deg,var(--oranje),var(--yellow));
+            transition:width 0.8s ease;
+        }
+        /* Scenario blokken */
+        .kamp-scenarios{
+            display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;
+        }
+        @media(max-width:500px){.kamp-scenarios{grid-template-columns:1fr}}
+        .kamp-scenario{
+            background:var(--bg);border:1px solid var(--border);
+            border-radius:10px;padding:14px 16px;
+        }
+        .kamp-scenario-title{
+            font-size:0.72em;text-transform:uppercase;letter-spacing:1px;
+            color:var(--muted);margin-bottom:6px;
+        }
+        .kamp-scenario-val{
+            font-family:'Bebas Neue',sans-serif;font-size:1.6em;color:var(--text);line-height:1;
+        }
+        .kamp-scenario-sub{font-size:0.75em;color:var(--muted);margin-top:3px}
+        /* Onmogelijk banner */
+        .kamp-impossible{
+            text-align:center;padding:10px 0;
+            font-size:0.88em;color:var(--red);
+            background:rgba(255,61,61,0.08);
+            border-radius:10px;margin-top:8px;
+            padding:12px;
+        }
+
         /* ADSENSE */
         .ad-wrap{margin:28px 0;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
 
@@ -407,6 +492,12 @@
             </div>
 
             <!-- 3. Stat kaartjes -->
+            <!-- Kampioen calculator -->
+            <div class="kampioens-box" id="kampioenBox" style="display:none">
+                <div class="kampioens-title">🏆 Kans op het Kampioenschap</div>
+                <div id="kampioenInhoud"></div>
+            </div>
+
             <div class="stat-row" id="statRow"></div>
 
             <!-- 4. Club vs Club -->
@@ -606,7 +697,98 @@ function renderMijnClub(){
         <div class="stat-card"><div class="stat-value">${t.winPct}%</div><div class="stat-label">Win %</div></div>
         <div class="stat-card"><div class="stat-value">${avgGf}</div><div class="stat-label">Goals/duel</div></div>
         <div class="stat-card"><div class="stat-value">${avgGa}</div><div class="stat-label">Tegen/duel</div></div>`;
+    renderKampioen(t);
     renderCompare();renderTopFlop();
+}
+
+function renderKampioen(t){
+    const TOTAL=34;
+    const leader=standings[0];
+    const box=document.getElementById('kampioenBox');
+    const el=document.getElementById('kampioenInhoud');
+    box.style.display='block';
+
+    const remaining=TOTAL-t.gp;
+    const maxPossible=t.pts+(remaining*3);
+    const leaderPts=leader.pts;
+    const leaderRemaining=TOTAL-leader.gp;
+    const ptsGap=leaderPts-t.pts;
+    const ptsNeeded=Math.max(0,ptsGap+1); // punten nodig om koploper te overtreffen
+    const winsNeeded=Math.ceil(ptsNeeded/3);
+    const progressPct=Math.min(100,Math.round(t.pts/Math.max(leaderPts,1)*100));
+
+    // Al kampioen?
+    if(t.pos===1 && ptsGap===0 && leader.team===t.team){
+        el.innerHTML=`<div class="kampioens-al">
+            <span class="trophy">🏆</span>
+            <div class="msg">${t.team} staat aan de leiding!</div>
+            <div style="color:var(--muted);font-size:0.85em;margin-top:8px">${remaining} wedstrijden te gaan · Blijf winnen!</div>
+        </div>`;
+        return;
+    }
+
+    // Onmogelijk?
+    const onmogelijk=maxPossible<leaderPts;
+
+    // Puntentempo nodig
+    const ppgNodig=remaining>0?(ptsNeeded/remaining).toFixed(1):'-';
+    const ppgHuidig=(t.gp>0?t.pts/t.gp:0).toFixed(1);
+
+    // Scenario: alleen winnen
+    const scenarioAllesWinnen=remaining*3+t.pts;
+    // Scenario: gemengd (70% winst)
+    const scenarioGemengd=Math.round(remaining*0.7*3+remaining*0.15)+t.pts;
+
+    el.innerHTML=`
+        ${onmogelijk?`<div class="kamp-impossible">⚠️ Mathematisch niet meer mogelijk om kampioen te worden dit seizoen</div>`:''}
+        <div class="kamp-stats">
+            <div class="kamp-stat">
+                <div class="kamp-stat-val" style="color:var(--oranje)">${ptsNeeded}</div>
+                <div class="kamp-stat-label">Punten nodig</div>
+            </div>
+            <div class="kamp-stat">
+                <div class="kamp-stat-val" style="color:var(--yellow)">${winsNeeded}</div>
+                <div class="kamp-stat-label">Winsten nodig</div>
+            </div>
+            <div class="kamp-stat">
+                <div class="kamp-stat-val" style="color:var(--blue)">${remaining}</div>
+                <div class="kamp-stat-label">Duels resterend</div>
+            </div>
+        </div>
+        <div class="kamp-progress-wrap">
+            <div class="kamp-progress-label">
+                <span>${t.team}: ${t.pts} pts</span>
+                <span>${leader.team} (koploper): ${leaderPts} pts</span>
+            </div>
+            <div class="kamp-progress-track">
+                <div class="kamp-progress-fill" style="width:${progressPct}%"></div>
+            </div>
+            <div style="font-size:0.75em;color:var(--muted);margin-top:5px;text-align:center">
+                ${ptsGap===0?'Gelijk aan de koploper! 🔥':`Achterstand: <strong style="color:var(--text)">${ptsGap} punten</strong> op ${leader.team}`}
+            </div>
+        </div>
+        <div class="kamp-scenarios">
+            <div class="kamp-scenario">
+                <div class="kamp-scenario-title">📊 Huidig tempo</div>
+                <div class="kamp-scenario-val" style="color:var(--muted)">${ppgHuidig} <span style="font-size:0.55em">pts/duel</span></div>
+                <div class="kamp-scenario-sub">Nodig om koploper te pakken: ${ppgNodig} pts/duel</div>
+            </div>
+            <div class="kamp-scenario">
+                <div class="kamp-scenario-title">🏆 Alles winnen</div>
+                <div class="kamp-scenario-val" style="color:var(--green)">${scenarioAllesWinnen} <span style="font-size:0.55em">pts eindtotaal</span></div>
+                <div class="kamp-scenario-sub">Als alle ${remaining} resterende duels gewonnen worden</div>
+            </div>
+            <div class="kamp-scenario">
+                <div class="kamp-scenario-title">📈 Realistisch scenario</div>
+                <div class="kamp-scenario-val" style="color:var(--oranje)">${scenarioGemengd} <span style="font-size:0.55em">pts eindtotaal</span></div>
+                <div class="kamp-scenario-sub">70% gewonnen, 15% gelijk, 15% verloren</div>
+            </div>
+            <div class="kamp-scenario">
+                <div class="kamp-scenario-title">🎯 Max haalbaar</div>
+                <div class="kamp-scenario-val" style="color:var(--blue)">${maxPossible} <span style="font-size:0.55em">pts maximaal</span></div>
+                <div class="kamp-scenario-sub">Als alle resterende ${remaining} duels gewonnen worden</div>
+            </div>
+        </div>`;
 }
 
 function posLabel(pos){
