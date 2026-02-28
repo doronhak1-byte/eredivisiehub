@@ -371,7 +371,12 @@
             <div class="chart-card full"><div class="section-title">Ranglijst Overzicht</div><div class="chart-wrap tall"><canvas id="mainChart"></canvas></div></div>
             <div class="chart-card"><div class="section-title">Thuis vs Uit (Top 8)</div><div class="chart-wrap"><canvas id="homeAwayChart"></canvas></div></div>
             <div class="chart-card"><div class="section-title">Aanval vs Verdediging</div><div class="chart-wrap"><canvas id="attackDefChart"></canvas></div></div>
-            <div class="chart-card full"><div class="section-title">📈 Eindstand Prognose (Top 10)</div><div style="font-size:0.78em;color:var(--muted);margin-bottom:12px">Gebaseerd op huidig puntentempo · 34 speelronden totaal · Gestippeld = verwachte eindscore</div><div class="chart-wrap tall"><canvas id="prognoseChart"></canvas></div></div>
+            <div class="chart-card full">
+                <div class="section-title">📈 Eindstand Prognose</div>
+                <div style="font-size:0.78em;color:var(--muted);margin-bottom:16px">Gebaseerd op huidig puntentempo &middot; 34 speelronden totaal</div>
+                <div id="prognoseKaartjes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:24px"></div>
+                <div class="chart-wrap tall"><canvas id="prognoseChart"></canvas></div>
+            </div>
         </div>
     </div>
 
@@ -665,46 +670,55 @@ function renderTopFlop(){
 
 let prognoseChart=null;
 function renderPrognose(){
+    const TOTAL=34;
+    const palette=['#ff6200','#4da6ff','#00c853','#ffd600','#ff3d3d','#c084fc','#38bdf8','#fb923c','#a3e635','#f472b6'];
+    const allTeams=[...standings].sort((a,b)=>b.pts-a.pts);
+    const top10=allTeams.slice(0,10);
+
+    // ── Prognose kaartjes ──
+    const kaartjesEl=document.getElementById('prognoseKaartjes');
+    kaartjesEl.innerHTML='';
+    allTeams.forEach((t,i)=>{
+        const ppg=t.gp>0?t.pts/t.gp:0;
+        const proj=Math.round(ppg*TOTAL);
+        const remaining=TOTAL-t.gp;
+        const color=i<10?palette[i]:'#666';
+        const card=document.createElement('div');
+        card.style.cssText=`background:#242424;border:2px solid ${color};border-radius:12px;padding:14px 16px;text-align:center;position:relative;overflow:hidden`;
+        const crest=t.crest?`<img src="${t.crest}" style="width:28px;height:28px;object-fit:contain;margin-bottom:6px" alt="">`:'';
+        card.innerHTML=`
+            ${crest}
+            <div style="font-weight:700;font-size:0.82em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px">${t.team}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:2.6em;color:${color};line-height:1">${proj}</div>
+            <div style="font-size:0.68em;color:#a0a0a0;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px">verwachte punten</div>
+            <div style="margin-top:8px;display:flex;justify-content:space-between;font-size:0.72em;color:#a0a0a0;border-top:1px solid #3a3a3a;padding-top:7px">
+                <span>Nu: <strong style="color:#fff">${t.pts}</strong></span>
+                <span>+${proj-t.pts} in ${remaining} duels</span>
+            </div>`;
+        kaartjesEl.appendChild(card);
+    });
+
+    // ── Lijngrafieken ──
     const ctx=document.getElementById('prognoseChart').getContext('2d');
     if(prognoseChart)prognoseChart.destroy();
-    const TOTAL=34;
-    // Top 10 teams sorteren op huidige punten
-    const top10=[...standings].sort((a,b)=>b.pts-a.pts).slice(0,10);
-    // Kleurenpalet per team
-    const palette=['#ff6200','#4da6ff','#00c853','#ffd600','#ff3d3d','#c084fc','#38bdf8','#fb923c','#a3e635','#f472b6'];
-    // Voor elk team: huidig punt als startpunt + lineaire prognose
     const datasets=top10.map((t,i)=>{
-        const ppg=t.gp>0?t.pts/t.gp:0; // punten per gespeeld
+        const ppg=t.gp>0?t.pts/t.gp:0;
         const projFinal=Math.round(ppg*TOTAL);
-        // Data punten: ronde 0 (0 punten), huidige ronde, eindprognose
         const color=palette[i];
         return [
-            // Werkelijke lijn (vast)
             {
                 label:t.team,
                 data:[{x:0,y:0},{x:t.gp,y:t.pts}],
-                borderColor:color,
-                backgroundColor:'transparent',
-                borderWidth:2.5,
-                pointRadius:[0,5],
-                pointBackgroundColor:color,
-                tension:0,
-                order:1,
+                borderColor:color,backgroundColor:'transparent',
+                borderWidth:2.5,pointRadius:[0,5],pointBackgroundColor:color,tension:0,order:1,
             },
-            // Prognoselijn (gestippeld)
             {
                 label:t.team+' (prognose)',
                 data:[{x:t.gp,y:t.pts},{x:TOTAL,y:projFinal}],
-                borderColor:color,
-                backgroundColor:'transparent',
-                borderWidth:2,
-                borderDash:[6,4],
-                pointRadius:[0,6],
-                pointBackgroundColor:'transparent',
-                pointBorderColor:color,
-                pointBorderWidth:2,
-                tension:0,
-                order:2,
+                borderColor:color,backgroundColor:'transparent',
+                borderWidth:2,borderDash:[6,4],
+                pointRadius:[0,7],pointBackgroundColor:'transparent',
+                pointBorderColor:color,pointBorderWidth:2.5,tension:0,order:2,
             }
         ];
     }).flat();
@@ -712,41 +726,32 @@ function renderPrognose(){
         type:'line',
         data:{datasets},
         options:{
-            responsive:true,
-            maintainAspectRatio:false,
+            responsive:true,maintainAspectRatio:false,
             interaction:{mode:'index',intersect:false},
             plugins:{
                 legend:{
                     display:true,
-                    labels:{
-                        color:'#a0a0a0',
-                        font:{size:11},
-                        boxWidth:14,
-                        // Alleen de echte teams tonen, niet de prognose duplicaten
-                        filter:(item)=>!item.text.includes('prognose')
-                    }
+                    labels:{color:'#a0a0a0',font:{size:11},boxWidth:14,
+                        filter:(item)=>!item.text.includes('prognose')}
                 },
                 tooltip:{
-                    backgroundColor:'#2e2e2e',
-                    borderColor:'#3a3a3a',
-                    borderWidth:1,
-                    titleColor:'#fff',
-                    bodyColor:'#a0a0a0',
-                    padding:12,
-                    cornerRadius:8,
+                    backgroundColor:'#1e1e1e',borderColor:'#3a3a3a',borderWidth:1,
+                    titleColor:'#fff',bodyColor:'#ccc',padding:14,cornerRadius:10,
                     filter:(item)=>!item.dataset.label.includes('prognose'),
                     callbacks:{
                         title:items=>items.length?'Speelronde '+items[0].parsed.x:'',
-                        label:item=>item.dataset.label+': '+item.parsed.y+' pts'
+                        label:item=>{
+                            const t=top10[Math.floor(item.datasetIndex/2)];
+                            const ppg=t.gp>0?t.pts/t.gp:0;
+                            const proj=Math.round(ppg*TOTAL);
+                            return ` ${item.dataset.label}: ${item.parsed.y} pts  →  eindprognose: ${proj} pts`;
+                        }
                     }
-                },
-                // Verticale lijn voor huidige ronde
-                annotation:false
+                }
             },
             scales:{
                 x:{
-                    type:'linear',
-                    min:0,max:TOTAL,
+                    type:'linear',min:0,max:TOTAL,
                     title:{display:true,text:'Speelronde',color:'#a0a0a0',font:{size:11}},
                     ticks:{color:'#a0a0a0',stepSize:2,font:{size:10}},
                     grid:{color:'rgba(255,255,255,0.05)'},
