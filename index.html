@@ -371,6 +371,7 @@
             <div class="chart-card full"><div class="section-title">Ranglijst Overzicht</div><div class="chart-wrap tall"><canvas id="mainChart"></canvas></div></div>
             <div class="chart-card"><div class="section-title">Thuis vs Uit (Top 8)</div><div class="chart-wrap"><canvas id="homeAwayChart"></canvas></div></div>
             <div class="chart-card"><div class="section-title">Aanval vs Verdediging</div><div class="chart-wrap"><canvas id="attackDefChart"></canvas></div></div>
+            <div class="chart-card full"><div class="section-title">📈 Eindstand Prognose (Top 10)</div><div style="font-size:0.78em;color:var(--muted);margin-bottom:12px">Gebaseerd op huidig puntentempo · 34 speelronden totaal · Gestippeld = verwachte eindscore</div><div class="chart-wrap tall"><canvas id="prognoseChart"></canvas></div></div>
         </div>
     </div>
 
@@ -510,7 +511,7 @@ function setUpdated(date){
 
 /* CHARTS */
 const CD={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#2e2e2e',borderColor:'#3a3a3a',borderWidth:1,titleColor:'#ffffff',bodyColor:'#a0a0a0',padding:12,cornerRadius:8}}};
-function renderCharts(){renderMainChart(mainType);renderHomeAway();renderAttackDef();}
+function renderCharts(){renderMainChart(mainType);renderHomeAway();renderAttackDef();renderPrognose();}
 function switchMainChart(type,btn){
     document.querySelectorAll('.tog-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');mainType=type;renderMainChart(type);
@@ -662,6 +663,104 @@ function renderTopFlop(){
     });
 }
 
+let prognoseChart=null;
+function renderPrognose(){
+    const ctx=document.getElementById('prognoseChart').getContext('2d');
+    if(prognoseChart)prognoseChart.destroy();
+    const TOTAL=34;
+    // Top 10 teams sorteren op huidige punten
+    const top10=[...standings].sort((a,b)=>b.pts-a.pts).slice(0,10);
+    // Kleurenpalet per team
+    const palette=['#ff6200','#4da6ff','#00c853','#ffd600','#ff3d3d','#c084fc','#38bdf8','#fb923c','#a3e635','#f472b6'];
+    // Voor elk team: huidig punt als startpunt + lineaire prognose
+    const datasets=top10.map((t,i)=>{
+        const ppg=t.gp>0?t.pts/t.gp:0; // punten per gespeeld
+        const projFinal=Math.round(ppg*TOTAL);
+        // Data punten: ronde 0 (0 punten), huidige ronde, eindprognose
+        const color=palette[i];
+        return [
+            // Werkelijke lijn (vast)
+            {
+                label:t.team,
+                data:[{x:0,y:0},{x:t.gp,y:t.pts}],
+                borderColor:color,
+                backgroundColor:'transparent',
+                borderWidth:2.5,
+                pointRadius:[0,5],
+                pointBackgroundColor:color,
+                tension:0,
+                order:1,
+            },
+            // Prognoselijn (gestippeld)
+            {
+                label:t.team+' (prognose)',
+                data:[{x:t.gp,y:t.pts},{x:TOTAL,y:projFinal}],
+                borderColor:color,
+                backgroundColor:'transparent',
+                borderWidth:2,
+                borderDash:[6,4],
+                pointRadius:[0,6],
+                pointBackgroundColor:'transparent',
+                pointBorderColor:color,
+                pointBorderWidth:2,
+                tension:0,
+                order:2,
+            }
+        ];
+    }).flat();
+    prognoseChart=new Chart(ctx,{
+        type:'line',
+        data:{datasets},
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            interaction:{mode:'index',intersect:false},
+            plugins:{
+                legend:{
+                    display:true,
+                    labels:{
+                        color:'#a0a0a0',
+                        font:{size:11},
+                        boxWidth:14,
+                        // Alleen de echte teams tonen, niet de prognose duplicaten
+                        filter:(item)=>!item.text.includes('prognose')
+                    }
+                },
+                tooltip:{
+                    backgroundColor:'#2e2e2e',
+                    borderColor:'#3a3a3a',
+                    borderWidth:1,
+                    titleColor:'#fff',
+                    bodyColor:'#a0a0a0',
+                    padding:12,
+                    cornerRadius:8,
+                    filter:(item)=>!item.dataset.label.includes('prognose'),
+                    callbacks:{
+                        title:items=>items.length?'Speelronde '+items[0].parsed.x:'',
+                        label:item=>item.dataset.label+': '+item.parsed.y+' pts'
+                    }
+                },
+                // Verticale lijn voor huidige ronde
+                annotation:false
+            },
+            scales:{
+                x:{
+                    type:'linear',
+                    min:0,max:TOTAL,
+                    title:{display:true,text:'Speelronde',color:'#a0a0a0',font:{size:11}},
+                    ticks:{color:'#a0a0a0',stepSize:2,font:{size:10}},
+                    grid:{color:'rgba(255,255,255,0.05)'},
+                },
+                y:{
+                    min:0,
+                    title:{display:true,text:'Punten',color:'#a0a0a0',font:{size:11}},
+                    ticks:{color:'#a0a0a0',font:{size:11}},
+                    grid:{color:'rgba(255,255,255,0.06)'}
+                }
+            }
+        }
+    });
+}
 function show(id){const el=document.getElementById(id);if(!el)return;const blockIds=['standData','mijnclubContent'];el.style.display=blockIds.includes(id)?'block':'flex';}
 function hide(id){const el=document.getElementById(id);if(el)el.style.display='none';}
 loadAll();
